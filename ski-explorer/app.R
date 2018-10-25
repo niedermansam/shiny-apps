@@ -14,6 +14,7 @@ library(ggplot2)
 library(tidyverse)
 library(leaflet)
 
+resorts <- read.csv("skiResorts_geocoded3.csv", stringsAsFactors = F) %>% as.tibble()
 
 # CREATE USER INTERFACE #############################################
 
