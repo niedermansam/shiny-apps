@@ -1,0 +1,12 @@
+-rw-r----- 1 shiny shiny  324 Oct 25 03:32 /var/log/shiny-server/rmd-shiny-20181025-033225-41195.log
+-rw-r----- 1 shiny shiny  324 Oct 25 03:37 /var/log/shiny-server/rmd-shiny-20181025-033712-33260.log
+-rw-r----- 1 shiny shiny 1474 Oct 25 03:46 /var/log/shiny-server/forecasting-tool-shiny-20181025-034624-36670.log
+-rw-r----- 1 shiny shiny 1234 Oct 25 04:02 /var/log/shiny-server/forecasting-tool-shiny-20181025-040237-43134.log
+-rw-r----- 1 shiny shiny  502 Oct 25 04:14 /var/log/shiny-server/mapper-shiny-20181025-041411-40646.log
+-rw-r----- 1 shiny shiny  158 Oct 25 04:14 /var/log/shiny-server/IntlCommunity_Dashboard-shiny-20181025-041446-33923.log
+-rw-r----- 1 shiny shiny  158 Oct 25 04:15 /var/log/shiny-server/IntlCommunity_Dashboard-shiny-20181025-041533-45996.log
+-rw-r----- 1 shiny shiny 1867 Oct 25 04:23 /var/log/shiny-server/forecasting-tool-shiny-20181025-040758-36323.log
+-rw-r----- 1 shiny shiny 1592 Oct 25 04:28 /var/log/shiny-server/SkiDashboard-shiny-20181025-042618-40723.log
+-rw-r----- 1 shiny shiny  502 Oct 25 04:43 /var/log/shiny-server/mapper-shiny-20181025-044348-36985.log
+-rw-r----- 1 shiny shiny  502 Oct 25 04:45 /var/log/shiny-server/mapper-shiny-20181025-044516-34310.log
+-rw-r----- 1 shiny shiny  502 Oct 25 04:49 /var/log/shiny-server/mapper-shiny-20181025-044901-44978.log
