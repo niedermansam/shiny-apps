@@ -14,7 +14,7 @@ library(ggplot2)
 library(tidyverse)
 library(leaflet)
 
-resorts <- read.csv("http://142.93.183.164:3838/data/skiResorts_geocoded3.csv") %>% as.tibble()
+resorts <- read.csv("https://raw.githubusercontent.com/niedermansam/shiny-apps/master/SkiDashboard/skiResorts_geocoded3.csv") %>% as.tibble()
 
 
 
