@@ -100,7 +100,7 @@ ui <- dashboardPage(
 
 server <- function(input, output, session) {
   
-  full <- read.csv("http://142.93.183.164:3838/data/IC_MapReady.csv") %>% as.tibble()
+  full <- read.csv("https://raw.githubusercontent.com/niedermansam/shiny-apps/master/IntlCommunity_Dashboard/IC_MapReady.csv") %>% as.tibble()
   
   full$label <- sprintf("<strong><a href= %s target=\"_blank\">%s</a></strong><br/> %s %s %s %s %s %s",
                         full$source, full$org, 
