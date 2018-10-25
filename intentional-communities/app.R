@@ -25,9 +25,9 @@ header <- dashboardHeader(
 sidebar <- dashboardSidebar(
   sidebarMenu(
     id = 'menu_tabs'
-    , menuItem('Communities', tabName = 'map') 
+    , menuItem('Communities', tabName = 'map')
   ),
-  selectInput("com_type","Community Type:",list("No Filter" = ".", 
+  selectInput("com_type","Community Type:",list("No Filter" = ".",
                                                 "Ecovillage",
                                                 "Cohousing" = "Cohousing|Cohouseholding",
                                                 "Coliving",
@@ -67,14 +67,14 @@ sidebar <- dashboardSidebar(
   radioButtons("labels","Popups:",
                list("On Click" = "popup","On Hover" = "label"), inline = T
                ),
-  sliderInput(inputId = "mem", 
-              label = "Minimum Size (members):", 
+  sliderInput(inputId = "mem",
+              label = "Minimum Size (members):",
               min = 0, max = 100, value = 5, step = 1),
-  
-  sliderInput(inputId = "res", 
-              label = "Minimum Size (residences):", 
+
+  sliderInput(inputId = "res",
+              label = "Minimum Size (residences):",
               min = 0, max = 70, value = 1, step = 1),
-  
+
   p(style = "text-align:center", a(href="https://www.ic.org/directory/listings/","Data from the Fellowship for Intentional Communities")
     )
   )
@@ -99,28 +99,28 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output, session) {
-  
-  full <- read.csv("https://raw.githubusercontent.com/niedermansam/shiny-apps/master/IntlCommunity_Dashboard/IC_MapReady.csv") %>% as.tibble()
-  
+
+  full <- read.csv("IntlCommunity_Dashboard/IC_MapReady.csv") %>% as.tibble()
+
   full$label <- sprintf("<strong><a href= %s target=\"_blank\">%s</a></strong><br/> %s %s %s %s %s %s",
-                        full$source, full$org, 
-                        ifelse(str_detect(full$type, "No Info"),"", paste0("<strong>Type(s): </strong>",full$type,"<br/>")), 
+                        full$source, full$org,
+                        ifelse(str_detect(full$type, "No Info"),"", paste0("<strong>Type(s): </strong>",full$type,"<br/>")),
                         ifelse(str_detect(full$area, "No Info"),"", paste0("<strong>Area: </strong>",full$area,"<br/>")),
                         ifelse(is.na(full$members),"", paste0("<strong>Adult Members: </strong>",full$members,"<br/>")),
                         ifelse(is.na(full$residences),"", paste0("<strong>Residences: </strong>",full$residences,"<br/>")),
                         ifelse(str_detect(full$movein, "No Info"),"", paste0("<strong>Start Year: </strong>",full$movein,"<br/>")),
-                        ifelse(str_detect(full$meals_practices, "No Info"),"", paste0("<strong>Dietary Practices: </strong>",full$meals_practices,"<br/>"))) %>% 
+                        ifelse(str_detect(full$meals_practices, "No Info"),"", paste0("<strong>Dietary Practices: </strong>",full$meals_practices,"<br/>"))) %>%
     lapply(htmltools::HTML)
-  
-  
+
+
   output$map <- renderLeaflet({
     leaflet() %>%
       setView(lng = -50, lat = 50, zoom = 2)
   })
-  
-  
+
+
   observe({
-    
+
     min_res <- input$res
     min_mem <- input$mem
     base_map <- input$base_map
@@ -129,28 +129,28 @@ server <- function(input, output, session) {
     status_grep <- paste0("(?i)",input$status)
     base_map <- input$map_type
     label_type <- as.character(input$labels)
-    
-    sites <- full %>% 
+
+    sites <- full %>%
       filter(members >= min_mem & residences >= min_res & str_detect(meals_practices,food_grep) & str_detect(type,type_grep) & str_detect(as.character(status), status_grep))
-    
+
     if(label_type == "popup"){
-    leafletProxy("map") %>% clearMarkers() %>% 
+    leafletProxy("map") %>% clearMarkers() %>%
       addProviderTiles(base_map) %>%
       addMarkers(lng = sites$lon,
                  lat = sites$lat,
                  popup = sites$label)
     }
-    
+
     if(label_type == "label"){
-      leafletProxy("map") %>% clearMarkers() %>% 
+      leafletProxy("map") %>% clearMarkers() %>%
         addProviderTiles(base_map) %>%
         addMarkers(lng = sites$lon,
                    lat = sites$lat,
                    label = sites$label)
     }
-    
+
   })
-  
+
 }
 
 
