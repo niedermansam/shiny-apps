@@ -29,9 +29,9 @@ ui <- dashboardPage(
     fileInput("file1",
               "Choose CSV File",
               accept = c(
+                ".csv",
                 "text/csv",
-                "text/comma-separated-values,text/plain",
-                ".csv")),
+                "text/comma-separated-values,text/plain")),
 
     selectInput("demo", "or select demo data:",
                 choices = c("","Glacier Visits"=2, "Australian Restaurant Sales" = 3)),

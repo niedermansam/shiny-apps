@@ -38,3 +38,7 @@ a {
 #download {
   padding: 0 15px 0 15px;
 }
+
+#map {
+  height: 100vh;
+}
