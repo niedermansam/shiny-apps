@@ -1,0 +1,26 @@
+
+
+#download {
+  margin: 0 25% 0 25%;
+  color: slategrey;
+}
+
+#download:hover {
+  box-shadow: 0 0 2px 2px inset;
+}
+
+.nav-tabs>li>a {
+  padding-left: 40px;
+  padding-right: 40px;
+
+  font-size: 14px;
+  font-weight: bold;
+}
+
+label {
+  margin-left: 20px;
+}
+
+#down {
+  padding-top:20px;
+}
