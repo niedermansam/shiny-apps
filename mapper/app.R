@@ -129,8 +129,8 @@ server <- function(input, output, session) {
     df <- data()
 
     user_map <- leaflet(df) %>%
-      addTiles() %>%
-      addMarkers()
+      addTiles()  %>% 
+      clearMarkers() %>% addMarkers(popup=df$name)
     return(user_map)
 
   })
