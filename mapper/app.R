@@ -72,15 +72,16 @@ ui <- dashboardPage(
 
 
 server <- function(input, output, session) {
-  
-  # Update the "Fields" selector based on user data
-   updateDash <- function(){ updateSelectInput(session, "select",
-                    # Remove date fields from forecasting options
-                    choices = names(df)[!str_detect(names(df),"(?i)year|month|day|date")],                      
-                    label = c('Choose value to Forecast:'))
-   }
+
+   
    
   data <- reactive({
+    
+    if(!is.null(input$file1)){
+      
+      df <- read.csv(input$file1$datapath)
+      return(df)
+    }
     
      if(input$demo =="1") {
        
@@ -91,14 +92,11 @@ server <- function(input, output, session) {
      
       df <- read.csv("intentional-communities.csv")   
       
-      updateDash()
       return(df)
       
     } else if (input$demo %>% as.character() == "3" & !isTruthy(input$file1)) {
       
       df <- read.csv('ski-resorts.csv')
-      
-      updateDash()
       return(df)
     } else if (isTruthy(input$file1)){
     # check the user has entered a file
@@ -109,7 +107,7 @@ server <- function(input, output, session) {
       # Read user-provided csv
       df <- read.csv(input$file1$datapath)
       
-      updateDash()},
+      },
       
       # return a safeError if a parsing error occurs
       error = function(e) {
@@ -145,8 +143,6 @@ server <- function(input, output, session) {
   })
   
   observe({
-    
-    req(df)
     df <- data()
     
     if(!is.na(df)){
