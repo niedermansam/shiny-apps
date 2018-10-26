@@ -34,7 +34,13 @@ ui <- dashboardPage(
                 "text/comma-separated-values,text/plain")),
 
     selectInput("demo", "or select demo data:",
-                choices = c("","Glacier Visits"=2, "Australian Restaurant Sales" = 3)),
+                choices = c("choose demo" = '1',"Ski Resorts"='3', "Intentional Communities" = '2')),
+    
+    
+    
+    # Select Field to forecast
+#    selectInput("select", "Select input",
+#                label = c("Please load a CSV")),
 
     # Create Download Button
 
@@ -59,19 +65,68 @@ ui <- dashboardPage(
 
     # Create tabs for main panel ##########################################################
     fluidPage(
-      leafletOutput(outputId = "map")
+      leafletOutput(outputId = "map",height=700)
     )
   )
 )
 
 
 server <- function(input, output, session) {
+  
+  # Update the "Fields" selector based on user data
+   updateDash <- function(){ updateSelectInput(session, "select",
+                    # Remove date fields from forecasting options
+                    choices = names(df)[!str_detect(names(df),"(?i)year|month|day|date")],                      
+                    label = c('Choose value to Forecast:'))
+   }
+   
+  data <- reactive({
+    
+     if(input$demo =="1") {
+       
+       df <- NA
+       return(df)
+       
+     } else if(input$demo %>% as.character() == "2" & !isTruthy(input$file1)){
+     
+      df <- read.csv("intentional-communities.csv")   
+      
+      updateDash()
+      return(df)
+      
+    } else if (input$demo %>% as.character() == "3" & !isTruthy(input$file1)) {
+      
+      df <- read.csv('ski-resorts.csv')
+      
+      updateDash()
+      return(df)
+    } else if (isTruthy(input$file1)){
+    # check the user has entered a file
+    req(input$file1)
+    
+    # Get the data
+    tryCatch({
+      # Read user-provided csv
+      df <- read.csv(input$file1$datapath)
+      
+      updateDash()},
+      
+      # return a safeError if a parsing error occurs
+      error = function(e) {
+        stop(safeError(e))
+      })
+    
+    }
+
+    
+    return(df)
+    
+  })
+  
 
   widget <- reactive({
 
-    req(input[['file1']][['datapath']])
-
-    df <- read.csv(input[['file1']][['datapath']])
+    df <- data()
 
     user_map <- leaflet(df) %>%
       addTiles() %>%
@@ -83,19 +138,27 @@ server <- function(input, output, session) {
 
   map <- renderLeaflet({
 
-    req(input[['file1']][['datapath']])
-
-    df <- read.csv(input[['file1']][['datapath']])
-
-    user_map <- leaflet(df) %>%
-      addTiles() %>%
-      addMarkers()
+    user_map <- leaflet() %>%
+      addTiles()
     return(user_map)
 
   })
+  
+  observe({
+    
+    req(df)
+    df <- data()
+    
+    if(!is.na(df)){
+    
+    leafletProxy("map", data=df) %>% 
+      clearMarkers() %>% addMarkers(popup=df$name)
+    }
+    
+  })
 
   output$map <- reactive({
-
+    
     map()
 
     })

@@ -40,5 +40,5 @@ a {
 }
 
 #map {
-  height: 100vh;
+  max-height: 100% !important;
 }
