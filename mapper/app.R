@@ -20,10 +20,10 @@ library(htmlwidgets)
 ui <- dashboardPage(
   # Create Header for dashboard
   dashboardHeader(title = "Map Generator"),
-  
+
   # Create Sidebar ###########################################################
-  dashboardSidebar( 
-    
+  dashboardSidebar(
+
     # Allow for users to input a file
     fileInput("file1",
               "Choose CSV File",
@@ -31,31 +31,31 @@ ui <- dashboardPage(
                 "text/csv",
                 "text/comma-separated-values,text/plain",
                 ".csv")),
-    
-    selectInput("demo", "or select demo data:", 
+
+    selectInput("demo", "or select demo data:",
                 choices = c("","Glacier Visits"=2, "Australian Restaurant Sales" = 3)),
-    
+
     # Create Download Button
-    
+
      tags$label("Download your Map:", id="download"),
     downloadButton("export"),
-    
+
     tags$hr()
-    
+
     ),
-  
-  
+
+
   # Create Dashboard Body Content ###############################################################
   dashboardBody(
     tags$head(
-      
+
       # Link to style sheet
-      tags$link(rel = "stylesheet", 
-                type = "text/css", 
+      tags$link(rel = "stylesheet",
+                type = "text/css",
                 href = "styles.css")
     ),
-  
-    
+
+
     # Create tabs for main panel ##########################################################
     fluidPage(
       leafletOutput(outputId = "map")
@@ -64,55 +64,54 @@ ui <- dashboardPage(
 )
 
 
-server <- function(input, output, session) { 
-  
+server <- function(input, output, session) {
+
   widget <- reactive({
-    
+
     req(input[['file1']][['datapath']])
-    
+
     df <- read.csv(input[['file1']][['datapath']])
-    
+
     user_map <- leaflet(df) %>%
       addTiles() %>%
       addMarkers()
     return(user_map)
-    
+
   })
-  
-  
+
+
   map <- renderLeaflet({
-    
+
     req(input[['file1']][['datapath']])
-    
+
     df <- read.csv(input[['file1']][['datapath']])
-    
+
     user_map <- leaflet(df) %>%
       addTiles() %>%
       addMarkers()
     return(user_map)
-    
+
   })
-  
+
   output$map <- reactive({
-    
+
     map()
-    
+
     })
-  
+
   output$export <- downloadHandler(
     filename = function(){"avg-map.html"},
     content = function(file){
-      
-      
+
+
       saveWidget(widget(),file = file)
     }
   )
-  
-  
+
+
 }
 
 
 
-# Run the application 
+# Run the application
 shinyApp(ui = ui, server = server)
-
