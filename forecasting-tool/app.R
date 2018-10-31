@@ -197,7 +197,7 @@ server <- function(input, output, session) {
   # Create SUmmary Statistics
   output$summary <- renderText({
     names = data() %>% names() %>% str_replace_all("^|$","\t \t")
-    data() %>% stargazer(type = "html", digits = 0, digits.extra = 2, median =T)
+    data() %>% as.data.frame() %>% stargazer(type = "html", digits = 1, digits.extra = 2, median =T)
   })
 
 
