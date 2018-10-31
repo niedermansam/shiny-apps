@@ -16,6 +16,8 @@ library(ggplot2)
 library(stringr)
 library(htmlwidgets)
 library(leaflet)
+require(readr)
+require(openxlsx)
 
 # Create User Interface ######################################################
 ui <- dashboardPage(

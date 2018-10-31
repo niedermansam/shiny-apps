@@ -12,6 +12,8 @@ library(tidyverse)
 library(shinydashboard)
 library(shinycssloaders)
 library(rlang)
+require(readr)
+require(openxlsx)
 
 ## Only run examples in interactive R sessions
 

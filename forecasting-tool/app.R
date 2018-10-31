@@ -17,6 +17,7 @@ require(ggplot2)
 require(stringr)
 require(stargazer)
 require(openxlsx)
+require(readr)
 
 source('disclaimer.R')
 
