@@ -16,7 +16,7 @@ require(dplyr)
 require(ggplot2)
 require(stringr)
 require(stargazer)
-
+require(openxlsx)
 
 source('disclaimer.R')
 
@@ -28,13 +28,14 @@ ui <- dashboardPage(
   # Create Sidebar ###########################################################
   dashboardSidebar(
 
+
     # Allow for users to input a file
-    fileInput("file1",
+      fileInput("file1",
               "Choose CSV File",
-              accept = c(
-                "text/csv",
-                "text/comma-separated-values,text/plain",
-                ".csv")),
+              accept = c( ".csv", ".xls",".xlsx",".tsv")),
+
+    radioButtons("type","File Type:", choices = c("csv","tsv", "excel"), inline = T),
+
 
     selectInput("demo", "or select demo data:",
                 choices = c("","Glacier Visits"=2, "Australian Restaurant Sales" = 3)),
@@ -146,6 +147,7 @@ server <- function(input, output, session) {
       req(input$file1)
 
       # Get the data
+      if(input$type == "csv"){
       tryCatch({
         # Read user-provided csv
           df <- read.csv(input$file1$datapath) },
@@ -153,7 +155,26 @@ server <- function(input, output, session) {
         # return a safeError if a parsing error occurs
           error = function(e) {
           stop(safeError(e))
-        })
+          })
+      } else if(input$type == "excel"){
+        tryCatch({
+          # Read user-provided csv
+          df <- read.xlsx(input$file1$datapath) },
+
+          # return a safeError if a parsing error occurs
+          error = function(e) {
+            stop(safeError(e))
+          })
+      } else if(input$type == "tsv"){
+        tryCatch({
+          # Read user-provided csv
+          df <- read_delim(input$file1$datapath, "\t") },
+
+          # return a safeError if a parsing error occurs
+          error = function(e) {
+            stop(safeError(e))
+          })
+      }
 
       # Update the "Fields" selector based on user data
       updateSelectInput(session, "select",

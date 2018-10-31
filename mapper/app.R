@@ -35,9 +35,9 @@ ui <- dashboardPage(
 
     selectInput("demo", "or select demo data:",
                 choices = c("choose demo" = '1',"Ski Resorts"='3', "Intentional Communities" = '2')),
-    
-    
-    
+
+
+
     # Select Field to forecast
 #    selectInput("select", "Select input",
 #                label = c("Please load a CSV")),
@@ -73,61 +73,79 @@ ui <- dashboardPage(
 
 server <- function(input, output, session) {
 
-   
-   
+
+
   data <- reactive({
-    
+
     if(!is.null(input$file1)){
-      
+
       df <- read.csv(input$file1$datapath)
       return(df)
     }
-    
+
      if(input$demo =="1") {
-       
+
        df <- NA
        return(df)
-       
+
      } else if(input$demo %>% as.character() == "2" & !isTruthy(input$file1)){
-     
-      df <- read.csv("intentional-communities.csv")   
-      
+
+      df <- read.csv("intentional-communities.csv")
+
       return(df)
-      
+
     } else if (input$demo %>% as.character() == "3" & !isTruthy(input$file1)) {
-      
+
       df <- read.csv('ski-resorts.csv')
       return(df)
     } else if (isTruthy(input$file1)){
     # check the user has entered a file
     req(input$file1)
-    
+
     # Get the data
+    if(input$type == "csv"){
     tryCatch({
       # Read user-provided csv
-      df <- read.csv(input$file1$datapath)
-      
-      },
-      
+        df <- read.csv(input$file1$datapath) },
+
       # return a safeError if a parsing error occurs
-      error = function(e) {
+        error = function(e) {
         stop(safeError(e))
-      })
-    
+        })
+    } else if(input$type == "excel"){
+      tryCatch({
+        # Read user-provided csv
+        df <- read.xlsx(input$file1$datapath) },
+
+        # return a safeError if a parsing error occurs
+        error = function(e) {
+          stop(safeError(e))
+        })
+    } else if(input$type == "tsv"){
+      tryCatch({
+        # Read user-provided csv
+        df <- read_delim(input$file1$datapath, "\t") },
+
+        # return a safeError if a parsing error occurs
+        error = function(e) {
+          stop(safeError(e))
+        })
     }
 
-    
+    }
+
+
     return(df)
-    
+
   })
-  
+
 
   widget <- reactive({
 
     df <- data()
 
     user_map <- leaflet(df) %>%
-      addTiles()  %>% 
+      addTiles()  %>%
       clearMarkers() %>% addMarkers(popup=df$name)
     return(user_map)
 
@@ -141,20 +159,20 @@ server <- function(input, output, session) {
     return(user_map)
 
   })
-  
+
   observe({
     df <- data()
-    
+
     if(!is.na(df)){
-    
-    leafletProxy("map", data=df) %>% 
+
+    leafletProxy("map", data=df) %>%
       clearMarkers() %>% addMarkers(popup=df$name)
     }
-    
+
   })
 
   output$map <- reactive({
-    
+
     map()
 
     })
