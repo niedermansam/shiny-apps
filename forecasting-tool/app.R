@@ -30,12 +30,15 @@ ui <- dashboardPage(
   dashboardSidebar(
 
 
-    # Allow for users to input a file
-      fileInput("file1",
-              "Choose CSV File",
-              accept = c( ".csv", ".xls",".xlsx",".tsv")),
+  # Allow for users to input a file
+    fileInput("file1",
+            "Choose a File to Summarize:",
+            accept = c(
+              ".csv", ".xls",".xlsx",".tsv")),
 
-    radioButtons("type","File Type:", choices = c("csv","tsv", "excel"), inline = T),
+    selectInput("type","File Type:", choices = c("Excel Document (.xlsx)" = "excel","Comma Separated Values (.csv)" = "csv","Tab Separated Values (.tsv)" = "tsv")),
+
+
 
 
     selectInput("demo", "or select demo data:",

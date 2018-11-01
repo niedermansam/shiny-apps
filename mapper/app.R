@@ -27,13 +27,15 @@ ui <- dashboardPage(
   # Create Sidebar ###########################################################
   dashboardSidebar(
 
-    # Allow for users to input a file
+  # Allow for users to input a file
     fileInput("file1",
-              "Choose CSV File",
-              accept = c(
-                ".csv",
-                "text/csv",
-                "text/comma-separated-values,text/plain")),
+            "Choose a File to Summarize:",
+            accept = c(
+              ".csv", ".xls",".xlsx",".tsv")),
+
+    selectInput("type","File Type:", choices = c("Excel Document (.xlsx)" = "excel","Comma Separated Values (.csv)" = "csv","Tab Separated Values (.tsv)" = "tsv")),
+
+
 
     selectInput("demo", "or select demo data:",
                 choices = c("choose demo" = '1',"Ski Resorts"='3', "Intentional Communities" = '2')),

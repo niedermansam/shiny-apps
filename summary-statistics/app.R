@@ -20,15 +20,17 @@ require(openxlsx)
 
   ui <- dashboardPage(
     dashboardHeader(title = "SummarizeR"),
+    
+    dashboardSidebar(
 
         # Allow for users to input a file
           fileInput("file1",
-                  "Choose CSV File",
+                  "Choose a File to Summarize:",
                   accept = c(
                     ".csv", ".xls",".xlsx",".tsv")),
-
-        radioButtons("type","File Type:", choices = c("csv","tsv", "excel"), inline = T),
-
+          
+          selectInput("type","File Type:", choices = c("Excel Document (.xlsx)" = "excel","Comma Separated Values (.csv)" = "csv","Tab Separated Values (.tsv)" = "tsv")),
+          
 
         selectizeInput("demo", "or select demo data:",
                        choices = c("choose demo" = '1',"Ski Resorts"='3', "Intentional Communities" = '2')),
@@ -69,7 +71,32 @@ require(openxlsx)
   )
 
   server <- function(input, output, session) {
+    
+    dataModal <- function(failed = FALSE) {
+      modalDialog(
+        
+        span('Please make sure you select the correct data type!'),
+        
+        footer = tagList(
+          modalButton("Cancel"),
+          actionButton("ok", "OK")
+        )
+      )
+    }
+    
+    # Show modal when button is clicked.
+    observeEvent(input$file1, {
+      showModal(dataModal())
+    })
 
+    
+    
+    # When OK button is pressed, attempt to load the data set. If successful,
+    # remove the modal. If not show another modal, but this time with a failure
+    # message.
+    observeEvent(input$ok, { removeModal() })
+    
+    
     data <- reactive({
 
       update_vars <- function(){
