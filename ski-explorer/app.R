@@ -53,16 +53,16 @@ sidebar <- dashboardSidebar(
               c("No Filter", resorts$state %>% as.character() %>% unique())
   ),
 
+  # Select Base Map
+  selectInput("base_map", "Base Map:",
+               c("Stamen Terrain" = "Stamen.Terrain",
+                 "Open Street Map" = "OpenStreetMap",
+                 "Open Topo Map" = "OpenTopoMap")),
+
   # Labels on Click or Hover?
   radioButtons("labels","Popups:",
                list("On Click" = "popup","On Hover" = "label"), inline = T
-  ),
-
-  # Select Base Map
-  radioButtons("base_map", "Base Map:",
-               c("Stamen Terrain" = "Stamen.Terrain",
-                 "Open Street Map" = "OpenStreetMap",
-                 "Open Topo Map" = "OpenTopoMap"),inline = T)
+  )
 
 )
 
@@ -79,7 +79,7 @@ body <- dashboardBody(
         
         column(8,
                leafletOutput('map', height=500), #Print Map
-               htmlOutput("Click_text"),
+               htmlOutput("Click_text", align = 'center'),
               conditionalPanel('input.map_marker_click != null' ,tableOutput('forecast') %>% withSpinner())), #Print Forecast
         
         
@@ -217,7 +217,7 @@ observe({
       addMarkers(lng = sites$lon,
                  lat = sites$lat,
                  popup = sites$label,
-                 layerId = sites$name)
+                 layerId = paste0(sites$name, ", ", sites$state))
     }
 
   # make map with labels on hover
@@ -266,7 +266,7 @@ observeEvent(input$map_marker_click, {
   click<-input$map_marker_click
   if(is.null(click))
     return()
-  text2<-paste("Forecast for", click$id, "<br/> Coordinates:", click$lat, click$lng)
+  text2<-paste("<h4>Forecast for", click$id, "</h4>", "Coordinates: (", click$lat,", ", click$lng, ")")
   output$Click_text<- renderText({
     text2
   })
