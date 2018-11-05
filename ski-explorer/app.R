@@ -255,7 +255,7 @@ getWeather <- function(lat,lon) {
   forecast <- forecast$properties$periods %>% 
     as.tibble()%>% 
     mutate(wind = paste(windSpeed, windDirection)) %>% 
-    select(name,detailedForecast,temperature, wind) 
+    select(name,detailedForecast) 
 }
 
 
