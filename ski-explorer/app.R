@@ -13,6 +13,9 @@ library(shinydashboard)
 library(ggplot2)
 library(tidyverse)
 library(leaflet)
+library(httr)
+library(jsonlite)
+library(shinycssloaders)
 
 resorts <- read.csv("skiResorts_geocoded3.csv", stringsAsFactors = F) %>% as.tibble()
 
@@ -72,9 +75,18 @@ body <- dashboardBody(
     # Create Body for "Interactive Maps" Tab
     tabItem(
       tabName = 'map', # from output$map in shiny server
-      fluidRow(column(12,leafletOutput('map', height=500))), #Print Map
-      fluidRow(column(6, plotOutput("histPrice", width = "auto")), # Print Price Historam
-               column(6, plotOutput("scatterPriceVert", width = "auto")))), #Print Scatter Plot
+      fluidRow(
+        
+        column(8,
+               leafletOutput('map', height=500), #Print Map
+               htmlOutput("Click_text"),
+              conditionalPanel('input.map_marker_click != null' ,tableOutput('forecast') %>% withSpinner())), #Print Forecast
+        
+        
+        column(4, 
+               plotOutput("histPrice", width = "auto"), # Print Price Historam
+               plotOutput("scatterPriceVert", width = "auto")) #Print Scatter Plot
+        )), 
 
     # Create body for "Table" Tab
      tabItem(
@@ -204,7 +216,8 @@ observe({
       addProviderTiles(base_map) %>%
       addMarkers(lng = sites$lon,
                  lat = sites$lat,
-                 popup = sites$label)
+                 popup = sites$label,
+                 layerId = sites$name)
     }
 
   # make map with labels on hover
@@ -213,7 +226,8 @@ observe({
       addProviderTiles(base_map) %>%
       addMarkers(lng = sites$lon,
                  lat = sites$lat,
-                 label = sites$label)
+                 label = sites$label,
+                 layerId = sites$name)
     }
   })
 
@@ -232,6 +246,38 @@ observe({
 
 
 })
+
+getWeather <- function(lat,lon) {
+  # 44,-113/forecast
+  url <- paste0('https://api.weather.gov/points/',lat,',',lon,'/forecast')
+  unicode <- GET(url)
+  forecast <- unicode$content %>% rawToChar() %>% fromJSON()
+  forecast <- forecast$properties$periods %>% 
+    as.tibble()%>% 
+    mutate(wind = paste(windSpeed, windDirection)) %>% 
+    select(name,detailedForecast,temperature, wind) 
+}
+
+
+observeEvent(input$map_marker_click, {
+  
+  output$forecast <- NULL
+  
+  click<-input$map_marker_click
+  if(is.null(click))
+    return()
+  text2<-paste("Forecast for", click$id, "<br/> Coordinates:", click$lat, click$lng)
+  output$Click_text<- renderText({
+    text2
+  })
+  
+  output$forecast <- renderTable({
+    getWeather(click$lat, click$lng)
+  }, colnames = F)
+  
+  
+})
+
 
 }
 
