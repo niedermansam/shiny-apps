@@ -80,9 +80,15 @@ body <- dashboardBody(
         column(8,
                leafletOutput('map', height=500), #Print Map
                htmlOutput("Click_text", align = 'center'),
-               htmlOutput("snow_report", align = 'center'),
-               br(),
-              conditionalPanel('input.map_marker_click != null' ,tableOutput('forecast') %>% withSpinner())), #Print Forecast
+               conditionalPanel('input.map_marker_click != null' ,
+                                htmlOutput("snow_report", align = 'center') %>% withSpinner(),
+                                br(),
+                                tableOutput('forecast') %>% withSpinner()), #Print Forecast
+               
+               conditionalPanel('!input.map_marker_click' ,
+                                br(),
+                                h3('Click on a resort for more information!', align = 'center'))
+              ), 
         
         
         column(4, 
@@ -144,6 +150,21 @@ resortInBounds <- reactive({
            lifts >= min_lifts & str_detect(state, state_select))
 })
 
+resortsFiltered <- reactive({
+  max_price <- input$price
+  min_vert <- input$vert
+  min_lifts <- input$lifts
+  state_select <- input$state
+  state_select <- ifelse(state_select == "No Filter",".",state_select)
+  state_select <- paste(state_select,sep="|") %>% str_remove("\\|$")
+  
+  subset(resorts,
+         ticket <= max_price & vertical >= min_vert &
+         lifts >= min_lifts & str_detect(state, state_select))
+  
+  
+})
+
 ## Make Ticket Prices Histogram
 priceBreaks <- hist(plot = FALSE, resorts$ticket, breaks = 20)$breaks
 
@@ -200,7 +221,7 @@ output$scatterPriceVert <- renderPlot({
 # Re-render map with markers and info
 observe({
 
-  sites <- resorts # select resorts in bounds
+  sites <- resortsFiltered() # select resorts in bounds
   label_type <- input$labels # select label type (hover or click)
   base_map <- input$base_map # select base map
 
@@ -278,9 +299,10 @@ observeEvent(input$map_marker_click, {
   output$forecast <- NULL
   
   click<-input$map_marker_click
-  if(is.null(click))
-    return()
+
   text2<-paste("<h4>Forecast for", click$id, "</h4>", "Coordinates: (", click$lat,", ", click$lng, ")")
+  
+  
   output$Click_text<- renderText({
     text2
   })
