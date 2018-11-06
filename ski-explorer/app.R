@@ -200,7 +200,7 @@ output$scatterPriceVert <- renderPlot({
 # Re-render map with markers and info
 observe({
 
-  sites <- resortInBounds() # select resorts in bounds
+  sites <- resorts # select resorts in bounds
   label_type <- input$labels # select label type (hover or click)
   base_map <- input$base_map # select base map
 
