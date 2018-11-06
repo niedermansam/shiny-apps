@@ -80,7 +80,8 @@ body <- dashboardBody(
         column(8,
                leafletOutput('map', height=500), #Print Map
                htmlOutput("Click_text", align = 'center'),
-               htmlOutput("snow_report"),
+               htmlOutput("snow_report", align = 'center'),
+               br(),
               conditionalPanel('input.map_marker_click != null' ,tableOutput('forecast') %>% withSpinner())), #Print Forecast
         
         
@@ -287,6 +288,10 @@ observeEvent(input$map_marker_click, {
   
   
   snow <- forecast %>% summarize(
+    
+    low12 = sum(Snow_Low[1], na.rm=T),
+    high12 = sum(Snow_High[1], na.rm=T),
+    
     low24 = sum(Snow_Low[1:2], na.rm=T),
     high24 = sum(Snow_High[1:2], na.rm=T),
     
@@ -301,7 +306,9 @@ observeEvent(input$map_marker_click, {
   )
   
   output$snow_report <- renderText({
-    sprintf("<br/><ul><li><strong>%d-%d inches</strong> of snow in the next 24 hours</li><li><strong>%d-%d inches</strong> of snow in the next 48 hours</li><li><strong>%d-%d inches</strong> of snow in the next 72 hours<li> and <strong>%d-%d inches</strong> in the forecast period</li></li></ul>",
+    sprintf("<br/><strong>%d-%d inches</strong> of snow in the next 12 hours</br><strong>%d-%d inches</strong> of snow in the next 24 hours</br><strong>%d-%d inches</strong> of snow in the next 48 hours</br><strong>%d-%d inches</strong> of snow in the next 72 hours </br>and <strong>%d-%d inches</strong> of snow in the forecast period",
+          snow$low12,
+          snow$high12,
           snow$low24,
           snow$high24,
           snow$low48,
@@ -310,7 +317,7 @@ observeEvent(input$map_marker_click, {
           snow$high72,
           snow$low,
           snow$high
-          ) %>% str_replace_all("0-0","0")
+          ) %>% str_replace_all("0-0","0") %>% str_replace_all("1-1 inches","1 inch")
   })
   
     
