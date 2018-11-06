@@ -80,6 +80,7 @@ body <- dashboardBody(
         column(8,
                leafletOutput('map', height=500), #Print Map
                htmlOutput("Click_text", align = 'center'),
+               htmlOutput("snow_report"),
               conditionalPanel('input.map_marker_click != null' ,tableOutput('forecast') %>% withSpinner())), #Print Forecast
         
         
@@ -256,6 +257,17 @@ getWeather <- function(lat,lon) {
     as.tibble()%>% 
     mutate(wind = paste(windSpeed, windDirection)) %>% 
     select(name,detailedForecast) 
+  
+  forecast$Snow_Low <- forecast$detailedForecast %>% 
+    str_extract("(?i)snow accumulation.*\\.") %>% 
+    str_replace_all("one", "1") %>% str_extract("of \\d+|around \\d") %>% str_extract("\\d+") %>% as.integer()
+  
+  forecast$Snow_High <- forecast$detailedForecast %>% 
+    str_extract("(?i)snow accumulation.*\\.") %>% 
+    str_replace_all("one", "1") %>% 
+    str_extract("to \\d+|around \\d") %>% 
+    str_extract("\\d+") %>% as.integer()
+  return(forecast)
 }
 
 
@@ -271,8 +283,39 @@ observeEvent(input$map_marker_click, {
     text2
   })
   
+  forecast <- getWeather(click$lat, click$lng)
+  
+  
+  snow <- forecast %>% summarize(
+    low24 = sum(Snow_Low[1:2], na.rm=T),
+    high24 = sum(Snow_High[1:2], na.rm=T),
+    
+    low48 = sum(Snow_Low[1:4], na.rm=T),
+    high48 = sum(Snow_High[1:4], na.rm=T),
+    
+    low72 = sum(Snow_Low[1:6], na.rm=T),
+    high72 = sum(Snow_High[1:6], na.rm=T),
+    
+    low = sum(Snow_Low, na.rm=T),
+    high = sum(Snow_High, na.rm=T)
+  )
+  
+  output$snow_report <- renderText({
+    sprintf("<br/><ul><li><strong>%d-%d inches</strong> of snow in the next 24 hours</li><li><strong>%d-%d inches</strong> of snow in the next 48 hours</li><li><strong>%d-%d inches</strong> of snow in the next 72 hours<li> and <strong>%d-%d inches</strong> in the forecast period</li></li></ul>",
+          snow$low24,
+          snow$high24,
+          snow$low48,
+          snow$high48,
+          snow$low72,
+          snow$high72,
+          snow$low,
+          snow$high
+          ) %>% str_replace_all("0-0","0")
+  })
+  
+    
   output$forecast <- renderTable({
-    getWeather(click$lat, click$lng)
+    forecast %>% select(name,detailedForecast)
   }, colnames = F)
   
   
