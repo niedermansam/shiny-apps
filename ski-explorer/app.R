@@ -253,6 +253,7 @@ getWeather <- function(lat,lon) {
   # 44,-113/forecast
   url <- paste0('https://api.weather.gov/points/',lat,',',lon,'/forecast')
   unicode <- GET(url)
+  if(unicode$status_code == 404) { return() }
   forecast <- unicode$content %>% rawToChar() %>% fromJSON()
   forecast <- forecast$properties$periods %>% 
     as.tibble()%>% 
@@ -286,6 +287,10 @@ observeEvent(input$map_marker_click, {
   
   forecast <- getWeather(click$lat, click$lng)
   
+  if(is.null(forecast)) { 
+    output$snow_report <- renderText({"<br/> Sorry, we don't currently support forecasts for Canadian Resorts."})
+    return()
+    }
   
   snow <- forecast %>% summarize(
     
