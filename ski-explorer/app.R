@@ -83,7 +83,7 @@ body <- dashboardBody(
                conditionalPanel('input.map_marker_click != null' ,
                                 htmlOutput("snow_report", align = 'center') %>% withSpinner(),
                                 br(),
-                                tableOutput('forecast') %>% withSpinner()), #Print Forecast
+                                DT::dataTableOutput('forecast') %>% withSpinner()), #Print Forecast
                
                conditionalPanel('!input.map_marker_click' ,
                                 br(),
@@ -275,11 +275,14 @@ getWeather <- function(lat,lon) {
   url <- paste0('https://api.weather.gov/points/',lat,',',lon,'/forecast')
   unicode <- GET(url)
   if(unicode$status_code == 404) { return() }
+  
+  if(unicode$status_code == 503) { 
+    return(NA)
+    }
+  
   forecast <- unicode$content %>% rawToChar() %>% fromJSON()
   forecast <- forecast$properties$periods %>% 
-    as.tibble()%>% 
-    mutate(wind = paste(windSpeed, windDirection)) %>% 
-    select(name,detailedForecast) 
+    as.tibble()
   
   forecast$Snow_Low <- forecast$detailedForecast %>% 
     str_extract("(?i)snow accumulation.*\\.") %>% 
@@ -312,7 +315,13 @@ observeEvent(input$map_marker_click, {
   if(is.null(forecast)) { 
     output$snow_report <- renderText({"<br/> Sorry, we don't currently support forecasts for Canadian Resorts."})
     return()
-    }
+  }
+  
+  if(is.na(forecast)) { 
+    output$snow_report <- renderText({"<br/> Sorry, a forecast is not currently available for this location."})
+    return()
+  }
+  
   
   snow <- forecast %>% summarize(
     
@@ -347,10 +356,15 @@ observeEvent(input$map_marker_click, {
           ) %>% str_replace_all("0-0","0") %>% str_replace_all("1-1 inches","1 inch")
   })
   
+  output$forecast <- DT::renderDataTable({
+    dat <- forecast %>% select(name,icon,detailedForecast) %>% mutate(icon = paste0("<img src='",icon,"'/>"))
     
-  output$forecast <- renderTable({
-    forecast %>% select(name,detailedForecast)
-  }, colnames = F)
+    DT::datatable(dat, escape = FALSE, rownames = FALSE, options = list(pageLength = 5, dom = 'tip'), colnames = c("Period","", "Forecast")) # HERE
+  })
+    
+#  output$forecast <- renderTable({
+#    forecast %>% select(name,icon,detailedForecast)
+#  }, colnames = F)
   
   
 })
