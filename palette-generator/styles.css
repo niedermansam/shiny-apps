@@ -1,0 +1,9 @@
+.dt-buttons{
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+}
+
+.dt-button {
+  width: 30%;
+}
