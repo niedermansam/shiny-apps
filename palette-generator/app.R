@@ -62,7 +62,7 @@ server <- function(input, output, session) {
 
     generatePalette <- function(inputId){
 
-        img_formats <- "\\.(png|gif|jpeg|rbg|rgba|tiff|svg)$"
+        img_formats <- "\\.(png|gif|jp(e)+g|rbg|rgba|tiff|svg)$"
 
         if(inputId == "generate"){
             if(!str_detect(input$path, "http(s)+://|ftp(s)+://")){
@@ -79,7 +79,7 @@ server <- function(input, output, session) {
 
          if(!str_detect(data, img_formats)){
              screen_shot <- paste0(tempfile(),".png")
-             tryCatch(webshot(data, file=screen_shot, vwidth=2000, vheight= 1000),
+             tryCatch(webshot(data, file=screen_shot, vwidth=700, vheight= 100),
                       error = function(e){ print(e) })
 
              data <-screen_shot
