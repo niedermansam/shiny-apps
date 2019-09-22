@@ -77,11 +77,6 @@ server <- function(input, output, session) {
 
         col_name = "Color"
 
-        if(!str_detect(data, img_formats)){
-            screen_shot <- paste0(tempfile(),".png")
-            webshot(data, file=screen_shot, vwidth=2000, vheight= 1000)
-            data <-screen_shot
-        }
 
         tryCatch(
         output_palette <- color_palette(data, max = 100) %>%
