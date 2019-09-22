@@ -64,7 +64,7 @@ server <- function(input, output, session) {
 
         col_name = "Color"
 
-        output_palette <- color_palette(data, max = 100, show_swatch = F) %>%
+        output_palette <- color_palette(data, max = 100) %>%
             tibble::enframe(name=NULL, value=col_name)
 
         output_palette
