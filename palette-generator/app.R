@@ -10,6 +10,7 @@
 library(shiny)
 library(tidyverse)
 library(DT)
+library(webshot)
 
 if(!require(marketR)){
     devtools::install_github("niedermansam/marketR")
@@ -41,7 +42,7 @@ ui <- shinyUI(fluidPage(
             textInput( inputId = "exclude",
                        label = "Exclude Colors:",
                        value = "#000000 #FFFFFF"),
-            checkboxInput("click_exclude", "Exclude on click", value=T),
+            checkboxInput("click_exclude", "Exclude Selected Rows", value=T),
 
             numericInput("max", "Max Colors:", 10),
             HTML("&copy; Sam Supplee-Niederman 2019")
@@ -61,6 +62,8 @@ server <- function(input, output, session) {
 
     generatePalette <- function(inputId){
 
+        img_formats <- "\\.(png|gif|jpeg|rbg|rgba|tiff|svg)$"
+
         if(inputId == "generate"){
             if(!str_detect(input$path, "http(s)+://|ftp(s)+://")){
                 user_path <- paste0("http://",input$path)
@@ -74,10 +77,17 @@ server <- function(input, output, session) {
 
         col_name = "Color"
 
+        if(!str_detect(data, img_formats)){
+            screen_shot <- paste0(tempfile(),".png")
+            webshot(data, file=screen_shot, vwidth=2000, vheight= 1000)
+            data <-screen_shot
+        }
+
         tryCatch(
         output_palette <- color_palette(data, max = 100) %>%
             tibble::enframe(name=NULL, value=col_name),
         error = function(e){
+            print(data)
             return(NULL)
         }
         )
@@ -102,6 +112,7 @@ server <- function(input, output, session) {
                             rownames = F,
                             filter = 'none',
                             extensions = c('Buttons', 'Responsive', 'Scroller'),
+                            selection = "single",
                             options = list(
                                 deferRender = TRUE,
                                 scrollY = 450,
@@ -151,7 +162,11 @@ server <- function(input, output, session) {
     })
 
     observeEvent(
-        input$output_table_cell_clicked, {
+        {
+            input$output_table_cell_clicked
+            input$click_exclude
+            },
+        {
             if(input$click_exclude){
               click = input$output_table_cell_clicked$value
               newExclude <-  paste(input$exclude, click)
