@@ -19,7 +19,10 @@ library(marketR)
 
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(
+ui <- shinyUI(fluidPage(
+
+
+    includeCSS("styles.css"),
 
     # Application title
     titlePanel("Color Palette Generator"),
@@ -27,19 +30,21 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins
     sidebarLayout(
         sidebarPanel(
-            actionButton("generate", "Generate Palette", width="100%"),
-            hr(),
-            fileInput("file", "Upload an image:"),
-            helpText("Or include a URL to an image below. URLs must include either http(s):// or ftp(s)://."),
+            fileInput("file", "Upload Image:"),
             textInput( inputId = "path",
-                       label="",
+                       label="Image URL:",
                        value = ""),
+            actionButton("generate", "Generate Palette", width="100%"),
+            radioButtons("data_from", "", c("Upload", "URL"), inline=T),
             shiny::hr(),
+
             textInput( inputId = "exclude",
                        label = "Exclude Colors:",
                        value = "#000000 #FFFFFF"),
-            helpText("Remove colors by clicking on them in the table."),
-            numericInput("max", "Max Colors:", 10)
+            checkboxInput("click_exclude", "Exclude on click", value=T),
+
+            numericInput("max", "Max Colors:", 10),
+            HTML("&copy; Sam Supplee-Niederman 2019")
         ),
 
         # Show a plot of the generated distribution
@@ -47,7 +52,7 @@ ui <- fluidPage(
            dataTableOutput("output_table")
         )
     )
-)
+))
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
@@ -57,16 +62,25 @@ server <- function(input, output, session) {
     generatePalette <- function(inputId){
 
         if(inputId == "generate"){
-            data <- input$path
+            if(!str_detect(input$path, "http(s)+://|ftp(s)+://")){
+                user_path <- paste0("http://",input$path)
+            } else {
+                user_path <- input$path
+            }
+            data <- user_path
         } else if(inputId == "file"){
             data <- input$file$datapath
         }
 
         col_name = "Color"
 
+        tryCatch(
         output_palette <- color_palette(data, max = 100) %>%
-            tibble::enframe(name=NULL, value=col_name)
-
+            tibble::enframe(name=NULL, value=col_name),
+        error = function(e){
+            return(NULL)
+        }
+        )
         output_palette
     }
 
@@ -90,10 +104,10 @@ server <- function(input, output, session) {
                             extensions = c('Buttons', 'Responsive', 'Scroller'),
                             options = list(
                                 deferRender = TRUE,
-                                scrollY = 400,
+                                scrollY = 450,
                                 scroller = TRUE,
-                                dom = 'Bfrtip',
-                                buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+                                dom = 'Brt',
+                                buttons = c('copy', 'csv', 'excel')
                             )) %>%
             formatStyle(names(palette),
                         backgroundColor = styleEqual(output_palette, output_palette),
@@ -106,11 +120,11 @@ server <- function(input, output, session) {
 
     observeEvent( input$generate, {
 
-        if(!is.null(input$file)){
+        if(is.null(input$file) & input$path == "") { return(NULL) }
+
+        if(input$data_from == "Upload"){
             output_palette <<- generatePalette('file')
-        } else if(input$path == ""){
-            print('no url or file uploaded')
-        } else {
+        } else if(input$data_from  == "URL"){
             output_palette <<- generatePalette("generate")
         }
 
@@ -118,9 +132,16 @@ server <- function(input, output, session) {
     })
 
     observeEvent(input$file, {
+        updateRadioButtons(session, "data_from", selected="Upload")
         output_palette <<- generatePalette('file')
         renderPalette(output_palette)
     })
+
+    observeEvent(input$path, {
+        updateRadioButtons(session, "data_from", selected="URL")
+
+    })
+
 
     observeEvent({
         input$max
@@ -130,13 +151,13 @@ server <- function(input, output, session) {
     })
 
     observeEvent(
-        input$output_table_cell_clicked,
-        {
-            click = input$output_table_cell_clicked$value
-            newExclude <-  paste(input$exclude, click)
+        input$output_table_cell_clicked, {
+            if(input$click_exclude){
+              click = input$output_table_cell_clicked$value
+              newExclude <-  paste(input$exclude, click)
 
-            updateTextInput(session, "exclude", value=newExclude)
-            input$output_table_row_last_clicked
+              updateTextInput(session, "exclude", value=newExclude)
+            }
         })
 
     output$path <- renderText(input$path)
