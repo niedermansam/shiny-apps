@@ -79,7 +79,7 @@ server <- function(input, output, session) {
 
          if(!str_detect(data, img_formats)){
              screen_shot <- paste0(tempfile(),".png")
-             tryCatch(webshot(data, file=screen_shot, vwidth=700, vheight= 100),
+             tryCatch(webshot(data, file=screen_shot, cliprect = "viewport"),
                       error = function(e){ print(e) })
 
              data <-screen_shot
