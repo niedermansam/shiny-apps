@@ -38,12 +38,12 @@ ui <- fluidPage(
             textInput( inputId = "exclude",
                        label = "Exclude Colors:",
                        value = "#000000 #FFFFFF"),
+            helpText("Remove colors by clicking on them in the table."),
             numericInput("max", "Max Colors:", 10)
         ),
 
         # Show a plot of the generated distribution
         mainPanel(
-           textOutput("path"),
            dataTableOutput("output_table")
         )
     )
@@ -130,10 +130,10 @@ server <- function(input, output, session) {
     })
 
     observeEvent(
-        input$output_table_row_last_clicked,
+        input$output_table_cell_clicked,
         {
-            click = input$output_table_row_last_clicked
-            newExclude <-  paste(input$exclude, output_palette[click,])
+            click = input$output_table_cell_clicked$value
+            newExclude <-  paste(input$exclude, click)
 
             updateTextInput(session, "exclude", value=newExclude)
             input$output_table_row_last_clicked
