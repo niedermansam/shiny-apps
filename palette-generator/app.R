@@ -43,7 +43,7 @@ ui <- shinyUI(fluidPage(
             textInput( inputId = "exclude",
                        label = "Exclude Colors:",
                        value = "#000000 #FFFFFF"),
-            checkboxInput("click_exclude", "Exclude Selected Rows", value=T),
+            checkboxInput("click_exclude", "Exclude on Click", value=T),
 
             numericInput("max", "Max Colors:", 10),
             HTML("&copy; Sam Supplee-Niederman 2019")
@@ -51,7 +51,8 @@ ui <- shinyUI(fluidPage(
 
         # Show a plot of the generated distribution
         mainPanel(
-           dataTableOutput("output_table")
+            tags$h3(textOutput("message")),
+            dataTableOutput("output_table")
         )
     )
 ))
@@ -59,125 +60,147 @@ ui <- shinyUI(fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
 
+    # Options and Intilization #######
+    inputImage <- list()
     output_palette <- NULL
+    dt_options <- list(
+        deferRender = TRUE,
+        scrollY = 400,
+        scroller = TRUE,
+        dom = 'tB',
+        buttons = c('copy', 'csv', 'excel')
+    )
+    current_palette <- tibble(Colors="", .rows=0)
 
+    output$message <- renderText("Upload a image or input a URL to begin!")
+
+    # Generate DataTable and Proxy #########
     output$output_table <- renderDataTable({
-        tibble(color="Upload an image or enter a URL to begin!")
-    })
 
-    dt_proxy <- dataTableProxy("output_table")
+        output_palette <- c("Upload an image or enter a URL to begin!")
+        message = tibble(Colors=output_palette)
 
-    generatePalette <- function(inputId){
-
-        img_formats <- "\\.(png|gif|jp(e)+g|rbg|rgba|tiff|svg)$"
-
-        if(inputId == "generate"){
-            if(!str_detect(input$path, "http(s)+://|ftp(s)+://")){
-                user_path <- paste0("http://",input$path)
-            } else {
-                user_path <- input$path
-            }
-            data <- user_path
-        } else if(inputId == "file"){
-            data <- input$file$datapath
-        }
-
-        col_name = "Color"
-
-         if(!str_detect(data, img_formats)){
-             screen_shot <- paste0(tempfile(),".png")
-             tryCatch(webshot(data, file=screen_shot, cliprect = "viewport"),
-                      error = function(e){ print(e) })
-
-             data <-screen_shot
-         }
-
-        tryCatch(
-        output_palette <- color_palette(data, max = 100) %>%
-            tibble::enframe(name=NULL, value=col_name),
-        error = function(e){
-            print(data)
-            return(NULL)
-        }
-        )
-        output_palette
-    }
-
-
-    renderPalette <- function(palette, col=1){
-
-        if(is.null(palette)) {return(NULL)}
-
-        exclude <- input$exclude %>%
-            stringr::str_split("(, *| +| *,)")
-
-        exclude <- exclude[[1]] %>% str_subset("^#") %>% paste0(collapse = "|")
-
-        output_palette <- palette %>% filter(!str_detect(Color, exclude)) %>%
-            head(n=input$max)
-
-        dt <- DT::datatable(output_palette,
-                            autoHideNavigation = TRUE,
-                            rownames = F,
-                            filter = 'none',
-                            extensions = c('Buttons', 'Responsive', 'Scroller'),
-                            selection = "single",
-                            options = list(
-                                deferRender = TRUE,
-                                scrollY = 450,
-                                scroller = TRUE,
-                                dom = 'Brt',
-                                buttons = c('copy', 'csv', 'excel')
-                            )) %>%
-            formatStyle(names(palette),
+        tibble(Colors="Upload an image or enter a URL to begin!") %>%
+            DT::datatable(autoHideNavigation = TRUE,
+                          rownames = F,
+                          filter = 'none',
+                          extensions = c('Buttons', 'Responsive', 'Scroller'),
+                          selection = "single",
+                          options = dt_options ) %>%
+            formatStyle(names(message),
                         backgroundColor = styleEqual(output_palette, output_palette),
                         color="white")
 
-        dt
-    }
+        })
 
-    observeEvent( input$generate, {
+    dt_proxy <- dataTableProxy("output_table")
 
-        if(is.null(input$file) & input$path == "") { return(NULL) }
+    # Get Data from URL #########
+    url_data <- reactive({
 
-        if(input$data_from == "Upload"){
-            output_palette <- generatePalette('file')
-        } else if(input$data_from  == "URL"){
-            output_palette <- generatePalette("generate")
-        }
+            img_formats <- "\\.(png|gif|jp(e){0,1}g|rbg|rgba|tiff|svg)$"
 
-        output$output_table <- renderDataTable(renderPalette(output_palette))
+            if(!str_detect(input$path, "http(s)+://|ftp(s)+://")){
+                    user_path <- paste0("http://",input$path)
+                } else {
+                    user_path <- input$path
+                }
+            data <- user_path
+
+             if(!str_detect(data, img_formats)){
+                 screen_shot <- paste0(tempfile(),".png")
+                 tryCatch(webshot(data, file=screen_shot, cliprect = "viewport"),
+                          error = function(e){ print(e) })
+                 data <-screen_shot
+             }
+
+            tryCatch(
+            output_palette <- color_palette(data, max = 100) %>%
+                tibble::enframe(name=NULL, value="Colors"),
+            error = function(e){
+                print(e)
+                return(NULL)
+            })
+
+            output_palette
+
+            })
+
+    # Get Data from File Upload ########
+    upload_data <- reactive({
+        data <- input$file$datapath
+
+        tryCatch(
+            output_palette <- color_palette(data, max = 100) %>%
+                tibble::enframe(name=NULL, value="Colors"),
+            error = function(e){
+                print(e)
+                return(NULL)
+            })
+
+        output_palette
     })
 
-    # output$output_table <- renderDataTable({
-    #         if(is.null(input$file) & input$path == "") { return(NULL) }
-    #
-    #         if(input$data_from == "Upload"){
-    #             output_palette <- generatePalette('file')
-    #         } else if(input$data_from  == "URL"){
-    #             output_palette <- generatePalette("generate")
-    #         }
-    #     renderPalette(output_palette)
-    #
-    #     })
+    exclude <- reactive({
+            exclude <- input$exclude %>%
+                stringr::str_split("(, *| +| *,)")
 
+            exclude <- exclude[[1]] %>%
+                str_subset("^#") %>%
+                paste0(collapse = "|")
+
+            if(exclude == "") return("Do not filter")
+
+            exclude
+    })
+
+    # Generate Palette if user uploads file #######
     observeEvent(input$file, {
+        output$message <- NULL
+
+
         updateRadioButtons(session, "data_from", selected="Upload")
-        output_palette <- generatePalette('file')
-        output$output_table <- renderDataTable(renderPalette(output_palette))
+        current_palette <<- upload_data()
+
+        data <- current_palette %>%
+            filter(!str_detect(Colors, exclude())) %>%
+            head(n=input$max)
+
+        dt_proxy %>% replaceData(data, resetPaging = FALSE, rownames = FALSE)
+    })
+
+    # Generate Palette if User Clicks Button ##########
+    observeEvent(input$generate, {
+        if(input$data_from == "URL"){
+            if(input$path == "") return(NULL)
+            current_palette <<- url_data()
+        } else if (input$data_from == "Upload"){
+            if(is.null(input$upload)) return(NULL)
+            current_palette <<- upload_data()
+        }
+
+        output$message <- NULL
+
+        data <- current_palette %>%
+            filter(!str_detect(Colors, exclude())) %>%
+            head(n=input$max)
+
+        replaceData(dt_proxy, data, resetPaging = FALSE, rownames = FALSE)
     })
 
     observeEvent(input$path, {
         updateRadioButtons(session, "data_from", selected="URL")
-
     })
-
 
     observeEvent({
         input$max
         input$exclude
         }, {
-        renderPalette(output_palette)
+        data <- current_palette %>%
+            filter(!str_detect(Colors, exclude())) %>%
+            head(n=input$max)
+
+        replaceData(dt_proxy, data, resetPaging = FALSE, rownames = FALSE)
     })
 
     observeEvent({
@@ -185,7 +208,7 @@ server <- function(input, output, session) {
         input$click_exclude },
         { if(input$click_exclude){
             click = input$output_table_cell_clicked$value
-            newExclude <-  paste(input$exclude, click)
+            newExclude <-  paste(input$exclude, click) %>% str_replace_all(" {2,}", "")
             updateTextInput(session, "exclude", value=newExclude)
             }
         })

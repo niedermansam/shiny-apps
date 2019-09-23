@@ -11,3 +11,11 @@
 .dataTables_scrollBody {
     border-bottom: none !important;
 }
+
+#message{
+  text-align: center;
+}
+
+.dt-buttons{
+  margin-top: 10px;
+}
