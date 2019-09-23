@@ -74,6 +74,8 @@ server <- function(input, output, session) {
 
     output$message <- renderText("Upload a image or input a URL to begin!")
 
+    outputOptions(output, "message", suspendWhenHidden = FALSE)
+
     # Generate DataTable and Proxy #########
     output$output_table <- renderDataTable({
 
@@ -110,7 +112,10 @@ server <- function(input, output, session) {
              if(!str_detect(data, img_formats)){
                  screen_shot <- paste0(tempfile(),".png")
                  tryCatch(webshot(data, file=screen_shot, cliprect = "viewport"),
-                          error = function(e){ print(e) })
+                          error = function(e){
+                              print(e)
+
+                              })
                  data <-screen_shot
              }
 
@@ -128,6 +133,8 @@ server <- function(input, output, session) {
 
     # Get Data from File Upload ########
     upload_data <- reactive({
+
+
         data <- input$file$datapath
 
         tryCatch(
@@ -156,7 +163,8 @@ server <- function(input, output, session) {
 
     # Generate Palette if user uploads file #######
     observeEvent(input$file, {
-        output$message <- NULL
+
+        output$message <- renderText("Loading...")
 
 
         updateRadioButtons(session, "data_from", selected="Upload")
@@ -166,24 +174,38 @@ server <- function(input, output, session) {
             filter(!str_detect(Colors, exclude())) %>%
             head(n=input$max)
 
+
+
+        output$message <- NULL
         dt_proxy %>% replaceData(data, resetPaging = FALSE, rownames = FALSE)
     })
 
     # Generate Palette if User Clicks Button ##########
     observeEvent(input$generate, {
+
+
+        output$message <- renderText("Loading...")
+
+
         if(input$data_from == "URL"){
-            if(input$path == "") return(NULL)
+            if(input$path == "") {
+                output$message <- renderText('Please input a URL under "Image URL:"')
+                return(NULL)
+                }
             current_palette <<- url_data()
         } else if (input$data_from == "Upload"){
-            if(is.null(input$upload)) return(NULL)
+            if(is.null(input$file)) {
+                output$message <-  renderText("Please upload an Image")
+                return(NULL)
+                }
             current_palette <<- upload_data()
         }
-
-        output$message <- NULL
 
         data <- current_palette %>%
             filter(!str_detect(Colors, exclude())) %>%
             head(n=input$max)
+
+        output$message <- NULL
 
         replaceData(dt_proxy, data, resetPaging = FALSE, rownames = FALSE)
     })
