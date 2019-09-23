@@ -11,6 +11,7 @@ library(shiny)
 library(tidyverse)
 library(DT)
 library(webshot)
+library(shinycssloaders)
 
 if(!require(marketR)){
     devtools::install_github("niedermansam/marketR")
@@ -58,7 +59,13 @@ ui <- shinyUI(fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
 
-    output_palette <<- NULL
+    output_palette <- NULL
+
+    output$output_table <- renderDataTable({
+        tibble(color="Upload an image or enter a URL to begin!")
+    })
+
+    dt_proxy <- dataTableProxy("output_table")
 
     generatePalette <- function(inputId){
 
@@ -126,9 +133,7 @@ server <- function(input, output, session) {
                         backgroundColor = styleEqual(output_palette, output_palette),
                         color="white")
 
-        output$output_table <- renderDataTable({
-            dt
-        })
+        dt
     }
 
     observeEvent( input$generate, {
@@ -136,18 +141,30 @@ server <- function(input, output, session) {
         if(is.null(input$file) & input$path == "") { return(NULL) }
 
         if(input$data_from == "Upload"){
-            output_palette <<- generatePalette('file')
+            output_palette <- generatePalette('file')
         } else if(input$data_from  == "URL"){
-            output_palette <<- generatePalette("generate")
+            output_palette <- generatePalette("generate")
         }
 
-        renderPalette(output_palette)
+        output$output_table <- renderDataTable(renderPalette(output_palette))
     })
+
+    # output$output_table <- renderDataTable({
+    #         if(is.null(input$file) & input$path == "") { return(NULL) }
+    #
+    #         if(input$data_from == "Upload"){
+    #             output_palette <- generatePalette('file')
+    #         } else if(input$data_from  == "URL"){
+    #             output_palette <- generatePalette("generate")
+    #         }
+    #     renderPalette(output_palette)
+    #
+    #     })
 
     observeEvent(input$file, {
         updateRadioButtons(session, "data_from", selected="Upload")
-        output_palette <<- generatePalette('file')
-        renderPalette(output_palette)
+        output_palette <- generatePalette('file')
+        output$output_table <- renderDataTable(renderPalette(output_palette))
     })
 
     observeEvent(input$path, {
@@ -163,21 +180,15 @@ server <- function(input, output, session) {
         renderPalette(output_palette)
     })
 
-    observeEvent(
-        {
-            input$output_table_cell_clicked
-            input$click_exclude
-            },
-        {
-            if(input$click_exclude){
-              click = input$output_table_cell_clicked$value
-              newExclude <-  paste(input$exclude, click)
-
-              updateTextInput(session, "exclude", value=newExclude)
+    observeEvent({
+        input$output_table_cell_clicked
+        input$click_exclude },
+        { if(input$click_exclude){
+            click = input$output_table_cell_clicked$value
+            newExclude <-  paste(input$exclude, click)
+            updateTextInput(session, "exclude", value=newExclude)
             }
         })
-
-    output$path <- renderText(input$path)
 }
 
 # Run the application
